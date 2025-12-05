@@ -3,13 +3,6 @@ import Product from "../models/Product.js";
 
 const router = express.Router();
 
-/**
- * GET /api/products
- * optional query:
- *   ?category=protein
- *   ?q=searchText
- *   ?page=1&limit=20
- */
 router.get("/", async (req, res) => {
   try {
     const { category, q, page = 1, limit = 20 } = req.query;
@@ -26,7 +19,6 @@ router.get("/", async (req, res) => {
   }
 });
 
-// GET /api/products/:id  (view single product by id)
 router.get("/:id", async (req, res) => {
   try {
     const p = await Product.findById(req.params.id);

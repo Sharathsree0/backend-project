@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const ProductSchema = new mongoose.Schema({
   title: { type: String, required: true },
-  slug: { type: String },           // optional friendly URL
+  slug: { type: String },           
   description: { type: String },
   category: { type: String, index: true }, // e.g. "protein", "vitamin"
   images: [String],
