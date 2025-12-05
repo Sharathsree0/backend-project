@@ -15,7 +15,7 @@ app.use("/api/auth", auth);
 app.get("/",(req,res)=>res.json({ok:true,message:"backend is alive"}))
 
 const PORT = process.env.PORT || 5000
-const MONGO = process.env.MONGO_URL || 'mongodb://localhost:27017'
+const MONGO = process.env.MONGO_URL || 'mongodb://localhost:27017/backend_project'
 
 mongoose.connect(MONGO)
 .then(()=>{
