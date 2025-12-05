@@ -3,13 +3,14 @@ import cors from "cors"
 import morgan from "morgan";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import auth from "./middleware/auth.js";
+import auth from "./routes/auth.js";
 
 const app =express();
 dotenv.config();
 app.use(morgan('dev'));
 app.use(cors());
 app.use(express.json())
+app.use("/api", auth);
 
 app.get("/",(req,res)=>res.json({ok:true,message:"backend is alive"}))
 

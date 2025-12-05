@@ -1,7 +1,7 @@
 import express, { Router } from "express"
 import JWT from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import user from "../models/User"
+import user from "../models/User.js"
 
 const route =express.Router();
 
@@ -22,7 +22,7 @@ const users = await user.create({
 })
 
 const token = JWT.sign(
-    {id:user._id},
+    {id:users._id},
     process.env.JWT_SECRET,
     {expiresIn:"12h"}
 )
@@ -31,9 +31,9 @@ res.json({
     message:"registerd",
     token,
     user:{
-        id:user._id,
-        name:user.name,
-        email:user.email,
+        id:users._id,
+        name:users.name,
+        email:users.email,
     }
   })
 })
