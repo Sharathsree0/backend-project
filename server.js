@@ -10,7 +10,7 @@ dotenv.config();
 app.use(morgan('dev'));
 app.use(cors());
 app.use(express.json())
-app.use("/api", auth);
+app.use("/api/auth", auth);
 
 app.get("/",(req,res)=>res.json({ok:true,message:"backend is alive"}))
 
