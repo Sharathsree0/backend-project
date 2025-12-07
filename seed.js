@@ -4,7 +4,7 @@ dotenv.config();
 import Product from "./models/Product.js";
 
 async function seed() {
-  const MONGO = process.env.MONGO_URI;
+const MONGO = process.env.MONGO_URL;
   await mongoose.connect(MONGO);
 
   await Product.deleteMany({});
