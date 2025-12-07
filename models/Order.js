@@ -1,10 +1,9 @@
-// models/Order.js
 import mongoose from "mongoose";
 
 const OrderItemSchema = new mongoose.Schema({
   product: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
   qty: { type: Number, required: true, default: 1 },
-  priceAtPurchase: { type: Number, required: true } // snapshot price
+  priceAtPurchase: { type: Number, required: true } 
 }, { _id: false });
 
 const OrderSchema = new mongoose.Schema({
