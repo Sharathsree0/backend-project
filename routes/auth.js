@@ -1,77 +1,52 @@
-import express, { Router } from "express"
+import express from "express";
 import JWT from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import User from "../models/User.js"
+import User from "../models/User.js";
 
-const route =express.Router();
+const router = express.Router();
 
-route.post("/login",async (req,res)=>{
-    try{
-        const {email,password}=req.body
-        if(!email || !password){
-            return res.status(400).json({message:"email or password required"})
-        }
+router.post("/register", async (req, res) => {
+  const { name, email, password } = req.body;
 
-        const user = await User.findOne({ email });
-if (!user) return res.status(400).json({ message: "invalid email or password" });
+  if (!name || !email || !password)
+    return res.status(400).json({ message: "all fields required" });
 
-const storedHash = user.passwordhash || user.passwordhash;
-if (!storedHash) return res.status(500).json({ message: "server error: password hash missing" });
+  const exists = await User.findOne({ email });
+  if (exists) return res.status(400).json({ message: "already exists" });
 
-const isMatch = await bcrypt.compare(password, storedHash);
-if (!isMatch) return res.status(400).json({ message: "invalid email or password" });
+  const passwordHash = await bcrypt.hash(password, 10);
 
-if (!process.env.JWT_SECRET) return res.status(500).json({ message: "server misconfigured: JWT_SECRET missing" });
+  const user = await User.create({ name, email, passwordHash });
 
-const token = JWT.sign(
-  { id: user._id },
-  process.env.JWT_SECRET,
-  { expiresIn: "12h" }
-);
-res.json({
-  message: "login successful",
-  token,
-  user: {
-    id: user._id,
-    name: user.name,
-    email: user.email
-  }
-});
-    }catch(err){
-        console.error("login error",err)
-        res.status(500).json({message:"server error"})
-    }
-})
+  const token = JWT.sign({ id: user._id }, process.env.JWT_SECRET, {
+    expiresIn: "12h",
+  });
 
-route.post("/register",async (req,res)=>{
-    const {name,email,password}=req.body
-
-    if(!name || !email || !password){
-        return res.status(400).json({message:"all required"});
-    }
-const existing = await User.findOne({email})
-    if(existing){
-       return res.status(400).json({message:"already exist"});
-    }
-const passwordhash = await bcrypt.hash(password,10)
-
-const users = await User.create({
-    name,email,passwordhash
-})
-
-const token = JWT.sign(
-    {id:users._id},
-    process.env.JWT_SECRET,
-    {expiresIn:"12h"}
-)
-res.json({
-    message:"registerd",
+  res.json({
+    message: "registered",
     token,
-    user:{
-        id:users._id,
-        name:users.name,
-        email:users.email,
-    }
-  })
-})
-export default route;
+    user: { id: user._id, name: user.name, email: user.email },
+  });
+});
+
+router.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  const user = await User.findOne({ email });
+  if (!user) return res.status(400).json({ message: "invalid credentials" });
+
+  const match = await bcrypt.compare(password, user.passwordHash);
+  if (!match) return res.status(400).json({ message: "invalid credentials" });
+
+  const token = JWT.sign({ id: user._id }, process.env.JWT_SECRET, {
+    expiresIn: "12h",
+  });
+
+  res.json({
+    message: "login successful",
+    token,
+    user: { id: user._id, name: user.name, email: user.email },
+  });
+});
+
+export default router;
