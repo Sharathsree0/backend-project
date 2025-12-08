@@ -27,16 +27,5 @@ router.post("/add", auth, async (req, res) => {
 
   res.json(fresh);
 });
-router.post("/remove", auth, async (req, res) => {
-  const { productId } = req.body;
 
-  const cart = await Cart.findOne({ user: req.userId });
-  if (!cart) return res.status(404).json({ msg: "Cart not found" });
-
-  cart.items = cart.items.filter((item) => String(item.product) !== productId);
-
-  await cart.save();
-  const fresh = await Cart.findById(cart._id).populate("items.product");
-  res.json(fresh);
-});
 export default router;
