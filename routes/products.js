@@ -1,7 +1,40 @@
 import express from "express";
 import Product from "../models/Product.js";
+import upload from "../middleware/upload.js";
+import cloudinary from "../utils/cloudinary.js";
 
 const router = express.Router();
+
+router.post("/:id/upload", upload.single("image"), async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ message: "Product not found" });
+    if (!req.file) return res.status(400).json({ message: "No image uploaded" });
+
+    const result = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { folder: "health-hive" },
+        (error, result) => {
+          if (error) return reject(error);
+          resolve(result);
+        }
+      );
+      stream.end(req.file.buffer);
+    });
+
+    product.images.push(result.secure_url);
+    await product.save();
+
+    return res.json({
+      message: "Image uploaded",
+      image: result.secure_url,
+      product,
+    });
+  } catch (err) {
+    console.error("Upload route error:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
 
 router.get("/", async (req, res) => {
   const qNew = req.query.new;
