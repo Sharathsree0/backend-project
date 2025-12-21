@@ -8,8 +8,10 @@ import authRoutes from "./routes/auth.js";
 import productRoutes from "./routes/products.js";
 import cartRoutes from "./routes/cart.js";
 import wishlistRoutes from "./routes/wishlist.js";
-import orderRoutes from "./routes/orders.js";
-
+import orderRoutes from "./routes/order.js";
+import ratingRouter from "./routes/rating.js";
+import router from "./routes/address.js";
+import paymentRouter from "./routes/payment.js";
 
 dotenv.config();
 
@@ -25,7 +27,10 @@ app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/wishlist", wishlistRoutes);
-app.use("/api/orders", orderRoutes);
+app.use("/api/order", orderRoutes);
+app.use("/api/address",router)
+app.use("/api/rating",ratingRouter)
+app.use("/api/payment",paymentRouter)
 
 const PORT = process.env.PORT || 5000;
 const MONGO = process.env.MONGO_URL || "mongodb://localhost:27017/health_hive";

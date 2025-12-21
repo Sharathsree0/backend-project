@@ -1,6 +1,6 @@
 import express from "express";
 import Product from "../models/Product.js";
-import upload from "../middleware/upload.js";
+import upload from "../middleware/uplode.js";
 import cloudinary from "../utils/cloudinary.js";
 
 const router = express.Router();
