@@ -1,14 +1,12 @@
 import mongoose from "mongoose";
 
 const AddressSchema = new mongoose.Schema({
-  // The Link: This connects this address to a specific User
   userId: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: "User", 
     required: true 
   },
   
-  // The Data
   fullName: { type: String, required: true },
   mobile: { type: String, required: true },
   street: { type: String, required: true },

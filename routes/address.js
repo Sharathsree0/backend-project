@@ -4,10 +4,6 @@ import auth from "../middleware/auth.js";
 
 const router = express.Router();
 
-/**
- * POST /api/address
- * Add a new address for logged-in user
- */
 router.post("/", auth, async (req, res) => {
   try {
     const {
@@ -20,13 +16,12 @@ router.post("/", auth, async (req, res) => {
       country
     } = req.body;
 
-    // basic validation
     if (!fullName || !mobile || !street || !city || !state || !zipCode) {
       return res.status(400).json({ message: "All required fields must be filled" });
     }
 
     const address = new Address({
-      userId: req.userId, // comes from auth middleware
+      userId: req.userId, 
       fullName,
       mobile,
       street,
@@ -62,15 +57,10 @@ router.get("/", auth, async (req, res) => {
   }
 });
 
-/**
- * PUT /api/address/:id/default
- * Set an address as default for logged-in user
- */
 router.put("/:id/default", auth, async (req, res) => {
   try {
     const addressId = req.params.id;
 
-    // 1. Make sure address belongs to this user
     const address = await Address.findOne({
       _id: addressId,
       userId: req.userId
@@ -80,13 +70,11 @@ router.put("/:id/default", auth, async (req, res) => {
       return res.status(404).json({ message: "Address not found" });
     }
 
-    // 2. Remove default from all other addresses
     await Address.updateMany(
       { userId: req.userId },
       { isDefault: false }
     );
 
-    // 3. Set selected address as default
     address.isDefault = true;
     await address.save();
 
