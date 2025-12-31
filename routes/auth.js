@@ -23,10 +23,13 @@ router.post("/register", async (req, res) => {
   });
 
   res.json({
-    message: "registered",
-    token,
-    user: { id: user._id, name: user.name, email: user.email },
-  });
+  token,
+  user: {
+    id: user._id,
+    name: user.name,
+    email: user.email
+  }
+});
 });
 
 router.post("/login", async (req, res) => {
@@ -42,11 +45,14 @@ router.post("/login", async (req, res) => {
     expiresIn: "12h",
   });
 
-  res.json({
-    message: "login successful",
-    token,
-    user: { id: user._id, name: user.name, email: user.email },
-  });
+ res.json({
+  token,
+  user: {
+    id: user._id,
+    name: user.name,
+    email: user.email
+  }
+});
 });
 
 export default router;

@@ -12,20 +12,32 @@ router.get("/", auth, async (req, res) => {
 });
 
 router.post("/add", auth, async (req, res) => {
-  const { productId, qty = 1 } = req.body;
+  const { productId} = req.body;
 
-  let cart = await Cart.findOne({ user: req.userId });
-  if (!cart) cart = await Cart.create({ user: req.userId, items: [] });
-
-  const item = cart.items.find((i) => String(i.product) === String(productId));
-
-  if (item) item.qty += qty;
-  else cart.items.push({ product: productId, qty });
-
-  await cart.save();
-  const fresh = await Cart.findById(cart._id).populate("items.product");
-
-  res.json(fresh);
+  const incresult= await Cart.updateOne(
+    {user:req.userId,"items.product":productId},
+  {$inc:{"items.$.qty":1}}
+);
+if(incresult.matchedCount===0){
+  await Cart.updateOne(
+  {user:req.userId},
+{
+  $push:{
+    items:{product:productId,qty:1}
+  }
+},{upsert:true}
+) 
+}
+ return res.json({message:"product added to cart"})
 });
 
+router.delete("/delete/:productId",async(req,res)=>{
+  const {productId}=req.params;
+
+  await Cart.updateOne(
+    {user:req.userId},
+  {$pull:{items:{product:productId}}}
+);
+res.json({message:"product removed from cart"})
+})
 export default router;

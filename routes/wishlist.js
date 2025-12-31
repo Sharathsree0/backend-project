@@ -16,32 +16,24 @@ router.get("/", auth, async (req, res) => {
   }
 });
 
-router.post("/toggle", auth, async (req, res) => {
-  try {
-    const { productId } = req.body;
-    if (!productId) return res.status(400).json({ msg: "productId required" });
+router.post("/add", auth, async (req, res) => {
+ const {productId}=req.body;
 
-    let wl = await Wishlist.findOne({ user: req.userId });
-    if (!wl) wl = new Wishlist({ user: req.userId, products: [] });
-
-    const index = wl.products.findIndex(p => String(p) === String(productId));
-
-    if (index === -1) {
-      
-      wl.products.push(productId);
-      await wl.save();
-      res.json({ msg: "added", products: wl.products });
-    } else {
-      
-      wl.products.splice(index, 1);
-      await wl.save();
-      res.json({ msg: "removed", products: wl.products });
-    }
-
-  } catch (err) {
-    console.error("wishlist toggle error", err);
-    return res.status(500).json({ msg: "Server error" });
-  }
+ await Wishlist.updateOne(
+  {user:req.userId},
+{$addToSet:{products:productId}},
+{upsert:true}
+)
+ res.json({ message: "Product added to wishlist" });
 });
+router.delete("/remove/:productId", auth, async (req, res) => {
+  const { productId } = req.params;
 
+  await Wishlist.updateOne(
+    { user: req.userId },
+    { $pull: { products: productId } }
+  );
+
+  res.json({ message: "Product removed from wishlist" });
+});
 export default router;
