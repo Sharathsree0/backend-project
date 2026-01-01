@@ -8,17 +8,17 @@ import adminAuth from "../middleware/adminAuth.js";
 const router = express.Router();
 router.post("/", auth, adminAuth, async (req, res) => {
   try {
-    const { title, price, category, stock } = req.body;
+   const { title, description, price, category } = req.body;
 
     if (!title || !price || !category) {
       return res.status(400).json({ message: "Required fields missing" });
     }
 
-    const product = new Product({
+   const product = await Product.create({
       title,
+      description,     
       price,
       category,
-      stock: stock || 0,
       images: []
     });
 
@@ -29,8 +29,16 @@ router.post("/", auth, adminAuth, async (req, res) => {
       product
     });
   } catch (err) {
-    return res.status(500).json({ message: "Server error" });
-  }
+  console.error("🔥 PRODUCT CREATE ERROR:", err);
+  console.error("🔥 ERROR MESSAGE:", err.message);
+  console.error("🔥 ERROR STACK:", err.stack);
+
+  res.status(500).json({
+    message: err.message,
+    error: err
+  });
+}
+
 });
 
 
