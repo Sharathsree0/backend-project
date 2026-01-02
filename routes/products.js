@@ -6,145 +6,102 @@ import auth from "../middleware/auth.js";
 import adminAuth from "../middleware/adminAuth.js";
 
 const router = express.Router();
+
 router.post("/", auth, adminAuth, async (req, res) => {
   try {
-   const { title, description, price, category } = req.body;
-
+    const { title, description, price, category } = req.body;
     if (!title || !price || !category) {
       return res.status(400).json({ message: "Required fields missing" });
     }
-
-   const product = await Product.create({
+    const product = await Product.create({
       title,
-      description,     
+      description,
       price,
       category,
       images: []
     });
-
-    await product.save();
-
-    return res.status(201).json({
-      message: "Product created",
-      product
-    });
+    res.status(201).json({ message: "Product created", product });
   } catch (err) {
-  console.error("🔥 PRODUCT CREATE ERROR:", err);
-  console.error("🔥 ERROR MESSAGE:", err.message);
-  console.error("🔥 ERROR STACK:", err.stack);
-
-  res.status(500).json({
-    message: err.message,
-    error: err
-  });
-}
-
+    res.status(500).json({ message: "Server error" });
+  }
 });
 
 
 router.put("/:id", auth, adminAuth, async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
-    }
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },   
+      { new: true, runValidators: true }
+    );
 
-    const { title, price, category, stock } = req.body;
-
-    if (title !== undefined) product.title = title;
-    if (price !== undefined) product.price = price;
-    if (category !== undefined) product.category = category;
-    if (stock !== undefined) product.stock = stock;
-
-    await product.save();
-
-    return res.json({
-      message: "Product updated",
-      product
-    });
+    if (!product) return res.status(404).json({ message: "Product not found" });
+    res.json({ message: "Product updated", product });
   } catch (err) {
-    return res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
 
 router.delete("/:id", auth, adminAuth, async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
-    }
-
-    await product.deleteOne();
-
-    return res.json({ message: "Product deleted" });
+    const product = await Product.findByIdAndDelete(req.params.id);
+    if (!product) return res.status(404).json({ message: "Product not found" });
+    res.json({ message: "Product deleted" });
   } catch (err) {
-    return res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
-
-router.post("/:id/upload", auth,adminAuth,upload.single("image"),async (req, res) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ message: "No image uploaded" });
-      }
-
-      const product = await Product.findById(req.params.id);
-      if (!product) {
-        return res.status(404).json({ message: "Product not found" });
-      }
-      const stream = cloudinary.uploader.upload_stream(
-        { folder: "health-hive" },
-        async (error, result) => {
-          if (error) {
-            return res.status(500).json({ message: "Upload failed" });
-          }
-          product.images.push(result.secure_url);
-          await product.save();
-
-          return res.json({
-            message: "Image uploaded successfully",
-            image: result.secure_url,
-          });
-        }
-      );
-
-      stream.end(req.file.buffer);
-    } catch (err) {
-      res.status(500).json({ message: "Server error" });
-    }
-  }
-);
-router.get("/", async (req, res) => {
-  const qNew = req.query.new;
-  const qCategory = req.query.category;
-
+router.post("/:id/upload", auth, adminAuth, upload.single("image"), async (req, res) => {
   try {
-    let products;
+    if (!req.file) return res.status(400).json({ message: "No image uploaded" });
 
-    if (qNew) {
-      products = await Product.find().sort({ createdAt: -1 }).limit(1);
-    } else if (qCategory) {
-      products = await Product.find({
-        category: qCategory, 
-      });
-    } else {
-      products = await Product.find();
-    }
-    
-    res.status(200).json(products);
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: "health-hive" },
+      async (error, result) => {
+        if (error) return res.status(500).json({ message: "Upload failed" });
+
+        await Product.updateOne(
+          { _id: req.params.id },
+          { $push: { images: result.secure_url } }   
+        );
+
+        res.json({ message: "Image uploaded successfully", image: result.secure_url });
+      }
+    );
+
+    stream.end(req.file.buffer);
   } catch (err) {
-    res.status(500).json({ msg: "Server Error" });
+    res.status(500).json({ message: "Server error" });
   }
 });
+
+router.get("/", async (req, res) => {
+  try {
+    const { new: qNew, category: qCategory } = req.query;
+    let query = {};
+
+    if (qCategory) query.category = qCategory;
+
+    let productsQuery = Product.find(query);
+
+    if (qNew) productsQuery = productsQuery.sort({ createdAt: -1 }).limit(1);
+
+    const products = await productsQuery.lean();   
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 router.get("/:id", async (req, res) => {
   try {
-    const item = await Product.findById(req.params.id);
-    if (!item) return res.status(404).json({ msg: "not found" });
-    res.json(item);
+    const product = await Product.findById(req.params.id).lean(); 
+    if (!product) return res.status(404).json({ message: "Product not found" });
+    res.json(product);
   } catch (err) {
-    res.status(400).json({ msg: "invalid id" });
+    res.status(400).json({ message: "Invalid product ID" });
   }
 });
 

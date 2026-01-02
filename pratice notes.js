@@ -15,7 +15,6 @@ router.post("/checkout", auth, async (req, res) => {
     const orderItems = [];
     let totalBill = 0;
 
-    // 1️⃣ Build order items
     for (const item of cart.items) {
       orderItems.push({
         product: item.product._id,
@@ -26,7 +25,6 @@ router.post("/checkout", auth, async (req, res) => {
       totalBill += item.product.price * item.qty;
     }
 
-    // 2️⃣ Atomically decrement stock (CRITICAL FIX)
     for (const item of orderItems) {
       const result = await Product.updateOne(
         { _id: item.product, stock: { $gte: item.qty } },
@@ -40,7 +38,6 @@ router.post("/checkout", auth, async (req, res) => {
       }
     }
 
-    // 3️⃣ Create order
     const order = await Order.create({
       user: req.userId,
       items: orderItems,
@@ -49,7 +46,6 @@ router.post("/checkout", auth, async (req, res) => {
       payment: { method: "cod", status: "pending" }
     });
 
-    // 4️⃣ Clear cart
     await Cart.deleteOne({ user: req.userId });
 
     res.json({

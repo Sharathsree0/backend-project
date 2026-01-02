@@ -1,49 +1,53 @@
 import express from "express";
 import auth from "../middleware/auth.js";
 import Cart from "../models/Cart.js";
-import Product from "../models/Product.js";
 import Order from "../models/Order.js";
-const router= express.Router()
+
+const router = express.Router();
+
 router.post("/checkout", auth, async (req, res) => {
   try {
     const { address } = req.body;
+    if (!address) return res.status(400).json({ message: "Address required" });
+    const cartAgg = await Cart.aggregate([
+      { $match: { user: req.userId } },
+      { $unwind: "$items" },
+      {
+        $lookup: {
+          from: "products",
+          localField: "items.product",
+          foreignField: "_id",
+          as: "productInfo"
+        }
+      },
+      { $unwind: "$productInfo" },
+      {
+        $project: {
+          product: "$productInfo._id",
+          qty: "$items.qty",
+          priceAtPurchase: "$productInfo.price",
+          lineTotal: { $multiply: ["$items.qty", "$productInfo.price"] }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          items: {
+            $push: {
+              product: "$product",
+              qty: "$qty",
+              priceAtPurchase: "$priceAtPurchase"
+            }
+          },
+          totalBill: { $sum: "$lineTotal" }
+        }
+      }
+    ]);
 
-    if (!address) {
-      return res.status(400).json({ message: "Address required" });
-    }
-
-    const cart = await Cart.findOne({ user: req.userId }).populate("items.product");
-
-    if (!cart || cart.items.length === 0) {
+    if (!cartAgg || cartAgg.length === 0) {
       return res.status(400).json({ message: "Cart is empty" });
     }
-
-    const orderItems = [];
-    let totalBill = 0;
-
-    for (const item of cart.items) {
-      orderItems.push({
-        product: item.product._id,
-        qty: item.qty,
-        priceAtPurchase: item.product.price
-      });
-
-      totalBill += item.product.price * item.qty;
-    }
-
-    for (const item of orderItems) {
-      const result = await Product.updateOne(
-        { _id: item.product, stock: { $gte: item.qty } },
-        { $inc: { stock: -item.qty } }
-      );
-
-      if (result.matchedCount === 0) {
-        return res.status(400).json({
-          message: "Insufficient stock for one or more items"
-        });
-      }
-    }
-
+    const { items: orderItems, totalBill } = cartAgg[0];
     const order = await Order.create({
       user: req.userId,
       items: orderItems,
@@ -51,19 +55,12 @@ router.post("/checkout", auth, async (req, res) => {
       address,
       payment: { method: "cod", status: "pending" }
     });
-
     await Cart.deleteOne({ user: req.userId });
-
-    res.json({
-      message: "Order placed successfully",
-      orderId: order._id
-    });
-
+    res.json({ message: "Order placed successfully", orderId: order._id });
   } catch (err) {
     console.error("checkout error", err.message);
     res.status(500).json({ message: "Server error" });
   }
 });
-
 
 export default router;

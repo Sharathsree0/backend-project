@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.get("/", auth, adminAuth, async (req, res) => {
   try {
-    const users = await User.find().select("-passwordHash"); // hide password hashes
+    const users = await User.find().select("-passwordHash"); 
     res.json(users);
   } catch (err) {
     console.error("Users fetch error:", err);
