@@ -12,7 +12,7 @@ import orderRoutes from "./routes/orders.js";
 import ratingRouter from "./routes/rating.js";
 import router from "./routes/address.js";
 import paymentRouter from "./routes/payment.js";
-
+import usersRoutes from "./routes/user.js";
 dotenv.config();
 
 const app = express();
@@ -22,7 +22,7 @@ app.use(morgan("dev"));
 app.use(express.json());
 
 app.get("/", (req, res) => res.json({ ok: true, message: "backend is alive" }));
-
+app.use("/api/users", usersRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/cart", cartRoutes);
